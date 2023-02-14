@@ -22,7 +22,7 @@ execute:
 -   `csv`
 
 ```{r wd-1-csv}
-
+surveys <- read_csv(here::here("labs", "lab2", "surveys.csv"))
 ```
 
 -   `xlsx`
@@ -40,7 +40,9 @@ execute:
 **WD-2: I can select necessary columns from a dataset.**
 
 ```{r wd-2}
-
+hiphop_demos <- hiphop_clean |>
+  select(subj, sex, age, ethnic) |>
+  distinct(subj, .keep_all = TRUE)
 ```
 
 **WD-3: I can filter rows from a dataframe for a *variety* of data types (e.g., numeric, integer, character, factor, date).**
@@ -48,13 +50,19 @@ execute:
 -   numeric
 
 ```{r wd-3-numeric}
-
+word_familiarity <- hiphop_clean |>
+  filter(age < 20) |>
+  group_by(word) |>
+  summarize(avg_familiarity = mean(as.numeric(familiarity))) 
 ```
 
 -   character -- specifically a string
 
 ```{r wd-3-string}
-
+word_familiarity <- hiphop_clean |>
+  filter(eth == "non-white" & sex == "Female") |>
+  group_by(word) |>
+  summarize(avg_familiarity = mean(as.numeric(familiarity))) 
 ```
 
 -   factor
@@ -80,7 +88,10 @@ execute:
 -   character -- specifically a string
 
 ```{r wd-4-string}
-
+hiphop_clean <- hiphop_clean |>
+  mutate(
+    eth = if_else(condition = ethnic == "white", true = "white", false = "non-white")
+  )
 ```
 
 -   factor
@@ -100,7 +111,8 @@ execute:
 -   `left_join()`
 
 ```{r wd-5-left}
-
+home_prices_avocados <- avocados_cali |>
+  left_join(home_prices_clean, by = c("cali_region" = "RegionName"))
 ```
 
 -   `right_join()`
@@ -126,13 +138,21 @@ execute:
 -   `semi_join()`
 
 ```{r wd-6-semi}
-
+avocados_major <- avocados_clean |>
+  semi_join(major_regions, by = "region")
+avocados_nonmajor <- avocados_clean |>
+  semi_join(nonmajor_regions, by = "region")
+avocados_states <- avocados_clean |>
+  semi_join(states, by = "region")
 ```
 
 -   `anti_join()`
 
 ```{r wd-6-anti}
-
+avocados_metro <- avocados_clean |>
+  anti_join(major_regions, by = "region") |>
+  anti_join(nonmajor_regions, by = "region") |>
+  anti_join(states, by = "region")
 ```
 
 **WD-7: I can pivot dataframes from long to wide and visa versa**
@@ -140,13 +160,22 @@ execute:
 -   `pivot_longer()`
 
 ```{r wd-7-long}
-
+home_prices_clean <- home_prices |>
+  select("RegionName" | "2015-01-31":"2018-12-31") |>
+  pivot_longer(cols = "2015-01-31":"2018-12-31", names_to = "Date", 
+               values_to = "Typical home value") |>
+  group_by(RegionName) |>
+  summarize(`Average typical home value` = mean(`Typical home value`))
 ```
 
 -   `pivot_wider()`
 
 ```{r wd-7-wide}
-
+avocados_cali |>
+  group_by(region, type) |>
+  summarize(avg_price = mean(AveragePrice)) |>
+  pivot_wider(names_from = "type", values_from = "avg_price") |>
+  mutate(price_diff = abs(conventional - organic))
 ```
 
 ## Reproducibility
@@ -190,7 +219,8 @@ I've done this in the following provided assignments:
 -   numeric variables
 
 ```{r dvs-1-num}
-
+ggplot(data = surveys, mapping = aes(x = weight, y = hindfoot_length)) +  
+  geom_jitter(alpha = 0.3)
 ```
 
 -   numeric variables and categorical variables
@@ -208,7 +238,12 @@ I've done this in the following provided assignments:
 -   dates
 
 ```{r dvs-2-date}
-
+surveys |>
+  group_by(genus, year) |>
+  summarize(avg_weight = mean(weight)) |>
+  ggplot(mapping = aes(x = year, y = avg_weight, color = fct_reorder(genus, avg_weight))) +
+  geom_line() +
+  labs(x = "Year", y = NULL, title = "Average weight", color = "Genus")
 ```
 
 **DVS-2: I use plot modifications to make my visualization clear to the reader.**
