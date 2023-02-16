@@ -22,6 +22,7 @@ execute:
 -   `csv`
 
 ```{r wd-1-csv}
+# Lab 2 Q1
 surveys <- read_csv(here::here("labs", "lab2", "surveys.csv"))
 ```
 
@@ -40,6 +41,7 @@ surveys <- read_csv(here::here("labs", "lab2", "surveys.csv"))
 **WD-2: I can select necessary columns from a dataset.**
 
 ```{r wd-2}
+# Lab 3 Q9
 hiphop_demos <- hiphop_clean |>
   select(subj, sex, age, ethnic) |>
   distinct(subj, .keep_all = TRUE)
@@ -50,6 +52,7 @@ hiphop_demos <- hiphop_clean |>
 -   numeric
 
 ```{r wd-3-numeric}
+# Lab 3 Q11
 word_familiarity <- hiphop_clean |>
   filter(age < 20) |>
   group_by(word) |>
@@ -59,6 +62,7 @@ word_familiarity <- hiphop_clean |>
 -   character -- specifically a string
 
 ```{r wd-3-string}
+# Lab 3 Q12
 word_familiarity <- hiphop_clean |>
   filter(eth == "non-white" & sex == "Female") |>
   group_by(word) |>
@@ -68,7 +72,16 @@ word_familiarity <- hiphop_clean |>
 -   factor
 
 ```{r wd-3-factor}
-
+# Lab 3 Q14 (revised)
+hiphop_clean |>
+  filter(ethnic == "white",
+           sex == "Male",
+           age > 16,
+           age < 24, 
+           city > 10000,
+           city < 60000) |>
+  slice_max(bieber) |>
+  distinct(subj)
 ```
 
 -   date
@@ -88,6 +101,7 @@ word_familiarity <- hiphop_clean |>
 -   character -- specifically a string
 
 ```{r wd-4-string}
+# Lab 3 Q7
 hiphop_clean <- hiphop_clean |>
   mutate(
     eth = if_else(condition = ethnic == "white", true = "white", false = "non-white")
@@ -111,6 +125,16 @@ hiphop_clean <- hiphop_clean |>
 -   `left_join()`
 
 ```{r wd-5-left}
+# Challenge 4
+cali_regions <- data.frame(
+  cali_region = c("Los Angeles", "San Diego", "Sacramento", "San Francisco"))
+avocados_cali <- avocados_clean |>
+  mutate(cali_region = case_when(
+    region == "LosAngeles" ~ "Los Angeles",
+    region == "SanDiego" ~ "San Diego",
+    region == "Sacramento" ~ "Sacramento",
+    region == "SanFrancisco" ~ "San Francisco")) |>
+  semi_join(cali_regions) 
 home_prices_avocados <- avocados_cali |>
   left_join(home_prices_clean, by = c("cali_region" = "RegionName"))
 ```
@@ -138,6 +162,16 @@ home_prices_avocados <- avocados_cali |>
 -   `semi_join()`
 
 ```{r wd-6-semi}
+# Lab 4 Q2
+major_regions <- data.frame(
+  region = c("Northeast", "Southwest", "West", "Southeast", "Midwest"))
+nonmajor_regions <- data.frame(
+  region = c("NorthernNewEngland", "Midsouth", "GreatLakes", "Plains", "SouthCentral",
+             "TotalUS"))
+states <- data.frame(
+  region = c("California", "NewYork", "SouthCarolina", "Minnesota", "Michigan", 
+             "Nebraska"))
+
 avocados_major <- avocados_clean |>
   semi_join(major_regions, by = "region")
 avocados_nonmajor <- avocados_clean |>
@@ -149,6 +183,22 @@ avocados_states <- avocados_clean |>
 -   `anti_join()`
 
 ```{r wd-6-anti}
+# Lab 2 Q2
+major_regions <- data.frame(
+  region = c("Northeast", "Southwest", "West", "Southeast", "Midwest"))
+nonmajor_regions <- data.frame(
+  region = c("NorthernNewEngland", "Midsouth", "GreatLakes", "Plains", "SouthCentral",
+             "TotalUS"))
+states <- data.frame(
+  region = c("California", "NewYork", "SouthCarolina", "Minnesota", "Michigan", 
+             "Nebraska"))
+
+avocados_major <- avocados_clean |>
+  semi_join(major_regions, by = "region")
+avocados_nonmajor <- avocados_clean |>
+  semi_join(nonmajor_regions, by = "region")
+avocados_states <- avocados_clean |>
+  semi_join(states, by = "region")
 avocados_metro <- avocados_clean |>
   anti_join(major_regions, by = "region") |>
   anti_join(nonmajor_regions, by = "region") |>
@@ -160,7 +210,9 @@ avocados_metro <- avocados_clean |>
 -   `pivot_longer()`
 
 ```{r wd-7-long}
+# Challenge 4
 home_prices_clean <- home_prices |>
+  # selecting only 2015 - 2018 because those are the years in avocado dataset
   select("RegionName" | "2015-01-31":"2018-12-31") |>
   pivot_longer(cols = "2015-01-31":"2018-12-31", names_to = "Date", 
                values_to = "Typical home value") |>
@@ -171,6 +223,7 @@ home_prices_clean <- home_prices |>
 -   `pivot_wider()`
 
 ```{r wd-7-wide}
+# Lab 4 Q6
 avocados_cali |>
   group_by(region, type) |>
   summarize(avg_price = mean(AveragePrice)) |>
@@ -203,13 +256,27 @@ I've done this in the following provided assignments:
 -   Example 1
 
 ```{r r-3-1}
-
+# Lab 4 Q4
+avocados_clean |>
+  separate(col = Date, into = c("Year", "Month", "Day"), sep = "-") |>
+  group_by(Month) |>
+  summarize(total = sum(`Total Volume`)) |>
+  slice_max(order_by = total)
 ```
 
 -   Example 2
 
 ```{r r-3-2}
-
+# Lab 3 Q14
+hiphop_clean |>
+  filter(ethnic == "white" & 
+           sex == "Male" & 
+           age > 16 & 
+           age < 24 & 
+           city > 10000 &
+           city < 60000) |>
+  slice_max(bieber) |>
+  distinct(subj)
 ```
 
 ## Data Visualization & Summarization
@@ -219,6 +286,7 @@ I've done this in the following provided assignments:
 -   numeric variables
 
 ```{r dvs-1-num}
+# Lab 2 Q6
 ggplot(data = surveys, mapping = aes(x = weight, y = hindfoot_length)) +  
   geom_jitter(alpha = 0.3)
 ```
@@ -226,18 +294,32 @@ ggplot(data = surveys, mapping = aes(x = weight, y = hindfoot_length)) +
 -   numeric variables and categorical variables
 
 ```{r dvs-2-num-cat}
-
+# Lab 4 Q6
+avocados_cali |> 
+  group_by(region, type) |>
+  summarize(avg_price = mean(AveragePrice)) |>
+  ggplot(mapping = aes(x = region, y = avg_price)) +
+  geom_line(aes(group = region)) +
+  geom_point(aes(color = type)) +
+  labs(x = "California region", y = "Average avocado price")
 ```
 
 -   categorical variables
 
 ```{r dvs-2-cat}
-
+# Lab 5 Part 3 Q7
+surveys |>
+  drop_na(day_of_week) |>
+  ggplot(mapping = aes(x = fct_relevel(day_of_week, 
+                                       c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")))) +
+  geom_bar() +
+  labs(x = "Day of week", y = NULL, title = "Number of rodents captured")
 ```
 
 -   dates
 
 ```{r dvs-2-date}
+# Lab 5 Part 2
 surveys |>
   group_by(genus, year) |>
   summarize(avg_weight = mean(weight)) |>
@@ -389,7 +471,7 @@ surveys |>
 -   Example 1
 
 ```{r pe-4-1}
-
+# mutate, filter, pivot_longer, etc
 ```
 
 -   Example 2
