@@ -1,0 +1,73 @@
+---
+title: "Challenge 4"
+author: "Bora Joo"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    code-fold: true
+editor: visual
+execute:
+  echo: true
+  error: true
+  message: false
+---
+
+## Data set
+
+### Loading in packages
+
+```{r}
+#| message: false
+library(tidyverse)
+avocados <- read_csv(here::here("labs", "lab4", "avocado.csv"))
+home_prices <- read_csv(here::here("labs", "lab4", "City_Zhvi_AllHomes.csv"))
+```
+
+### Data cleaning
+
+```{r}
+avocados_clean <- avocados |>
+  mutate(
+    type = as.factor(type),
+    region = as.factor(region)
+  ) |>
+  rename("Small/Medium Hass Avocado" = `4046`) |>
+  rename("Large Hass Avocado" = `4225`) |>
+  rename("Extra Large Hass Avocado" = `4770`)
+home_prices_clean <- home_prices |>
+  # selecting only 2015 - 2018 because those are the years in avocado dataset
+  select("RegionName" | "2015-01-31":"2018-12-31") |>
+  pivot_longer(cols = "2015-01-31":"2018-12-31", names_to = "Date", 
+               values_to = "Typical home value") |>
+  group_by(RegionName) |>
+  summarize(`Average typical home value` = mean(`Typical home value`))
+```
+
+### Reshaping
+
+```{r}
+#| message: false
+cali_regions <- data.frame(
+  cali_region = c("Los Angeles", "San Diego", "Sacramento", "San Francisco"))
+avocados_cali <- avocados_clean |>
+  mutate(cali_region = case_when(
+    region == "LosAngeles" ~ "Los Angeles",
+    region == "SanDiego" ~ "San Diego",
+    region == "Sacramento" ~ "Sacramento",
+    region == "SanFrancisco" ~ "San Francisco")) |>
+  semi_join(cali_regions) 
+home_prices_avocados <- avocados_cali |>
+  left_join(home_prices_clean, by = c("cali_region" = "RegionName"))
+```
+
+```{r}
+home_prices_avocados |>
+  group_by(region) |>
+  summarize(`Average avocado price` = mean(AveragePrice),
+            `Average typical home value` = mean(`Average typical home value`))
+```
+
+Based on the Zillow Home Value Index, the average typical home values in California's major cities between the years 2015-2018 were high. The highest average avocado price among the 4 major cities was \$1.80, in San Francisco, which also has the highest average typical home value of \$1,245,181.20. The lowest average avocado price among the 4 major cities was \$1.22, in Los Angeles, which had the second highest average typical home value of \$633,620.
+
+Looking at the housing prices of major California cities in 2015-2018 and the average prices of avocados, it does not seem likely that excessive sales of avocados were the reason millennials could not afford houses. On average, avocados were less than \$2/each, but house prices in major California cities were in the hundred thousands, with San Francisco even breaking into \$1 million. It seems much more likely that there were other factors that contributed to low home ownership, such as not having enough income to afford a home.

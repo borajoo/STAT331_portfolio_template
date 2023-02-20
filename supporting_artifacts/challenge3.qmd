@@ -1,0 +1,86 @@
+---
+title: "Challenge 3"
+author: "Bora Joo"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    code-fold: true
+editor: visual
+execute:
+  echo: true
+  error: true
+  message: false
+---
+
+## Data Set
+
+### Loading in packages
+
+```{r packages}
+#| message: false
+# code chunk for loading packages and importing the data
+library(tidyverse)
+hiphop <- read.csv(here::here("labs", "lab3", "hiphop.csv"))
+```
+
+### Data cleaning
+
+```{r dataset-clean}
+hiphop_clean <- hiphop |>
+    replace(is.na(hiphop), 0) |>
+    mutate(
+      word = as.factor(word),
+      subj = as.factor(subj),
+      sex = as.factor(sex),
+      ethnic = as.factor(ethnic),
+      familiarity = as.factor(familiarity),
+      across(jayz:bieber, as.factor)
+    )
+hiphop_clean <- hiphop_clean |>
+  mutate(
+    eth = if_else(condition = ethnic == "white", true = "white", false = "non-white")
+  )
+hiphop_genres <- hiphop_clean |>
+  select(c(subj:sex, eth, intl:unclassifiable)) |>
+  distinct(subj, .keep_all = TRUE)
+head(hiphop_genres)
+```
+
+### Published Comparisons
+
+Rock music had the highest difference in average reported artists for males vs. females. International music had the highest difference in average reported artists for whites vs. non-whites.
+
+```{r genres-sex}
+hiphop_genres |> 
+  group_by(sex) |>
+  summarize(
+    across(intl:unclassifiable,
+           mean)
+  ) |>
+  summarize(
+    across(intl:unclassifiable,
+           diff)
+  ) |>
+  abs() |>
+  which.max()
+```
+
+```{r genres-eth}
+hiphop_genres |> 
+  group_by(eth) |>
+  summarize(
+    across(intl:unclassifiable,
+           mean)
+  ) |>
+  summarize(
+    across(intl:unclassifiable,
+           diff)
+  ) |>
+  abs() |>
+  which.max()
+```
+
+### Study Design Critique - Data Ethics
+
+One concern I have for the study is that there is not a lot of diversity within the surveyed group. The study is on African American English but there is not a large sample of African American participants or other people of color. It is difficult to say the results of this study can be generalized towards young adults when the majority of participants are white. Furthermore, many African American people may feel uncomfortable with a study of how well (mostly) white people can use and understand AAE, and may feel this is a type of cultural appropriation.

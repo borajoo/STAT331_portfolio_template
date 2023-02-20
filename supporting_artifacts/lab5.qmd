@@ -1,0 +1,68 @@
+---
+title: "Lab 5"
+author: "Bora Joo"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    code-fold: true
+editor: visual
+execute:
+  echo: true
+  error: true
+---
+
+# Revisiting Lab 2
+
+```{r setup}
+#| message: false
+library(tidyverse)
+```
+
+```{r data}
+#| message: false
+surveys <- read_csv(here::here("labs", "lab2", "surveys.csv"))
+```
+
+```{r}
+ggplot(data = surveys, mapping = aes(x = weight, y = fct_reorder(species, weight))) +
+  geom_jitter(color = "cadetblue", alpha = 0.3) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(x = "Weight of rodents (g)",
+       y = NULL, title = "Distribution of weight of rodents by species")
+```
+
+# **Time-Series Plot**
+
+```{r}
+#| message: false
+surveys |>
+  group_by(genus, year) |>
+  summarize(avg_weight = mean(weight)) |>
+  ggplot(mapping = aes(x = year, y = avg_weight, color = fct_reorder(genus, avg_weight))) +
+  geom_line() +
+  labs(x = "Year", y = NULL, 
+       title = "Average weight of rodents over time by genus (g)", 
+       color = "Genus")
+```
+
+# Captures over the Week
+
+```{r}
+surveys |>
+  drop_na(day_of_week) |>
+  ggplot(mapping = aes(x = fct_relevel(day_of_week, 
+                                       c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")))) +
+  geom_bar() +
+  labs(x = "Day of week", y = NULL, title = "Number of rodents captured")
+```
+
+```{r}
+surveys |>
+  drop_na(day_of_week) |>
+  ggplot(mapping = aes(x = fct_collapse(day_of_week, 
+                                       "Weekday" = c("Mon", "Tue", "Wed", "Thu", "Fri"),
+                                       "Weekend" = c("Sat", "Sun")))) +
+  geom_bar() +
+  labs(x = "Day of week", y = NULL, title = "Number of rodents captured")
+```

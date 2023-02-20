@@ -1,0 +1,151 @@
+---
+title: "Lab 4"
+author: "Bora Joo"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    code-fold: true
+editor: visual
+execute:
+  echo: true
+  error: true
+  message: false
+---
+
+## Data set
+
+### Loading in packages
+
+```{r}
+#| message: false
+library(tidyverse)
+avocados <- read_csv(here::here("labs", "lab4", "avocado.csv"))
+```
+
+This dataset contains retail scan data on retail sales of Hass avocados. It was downloaded from the Hass Avocado Board website in May of 2018. It was collected directly from retailers' cash registers based on actual retail sales of Hass avocados. There are variables such as the date of observation, average price of a single avocado, and the city or region of the observation.
+
+### Data cleaning
+
+```{r}
+avocados_clean <- avocados |>
+  mutate(
+    type = as.factor(type),
+    region = as.factor(region)
+  ) |>
+  rename("Small/Medium Hass Avocado" = `4046`) |>
+  rename("Large Hass Avocado" = `4225`) |>
+  rename("Extra Large Hass Avocado" = `4770`)
+
+distinct(avocados_clean, region) |> view()
+
+```
+
+```{r}
+major_regions <- data.frame(
+  region = c("Northeast", "Southwest", "West", "Southeast", "Midwest"))
+nonmajor_regions <- data.frame(
+  region = c("NorthernNewEngland", "Midsouth", "GreatLakes", "Plains", "SouthCentral",
+             "TotalUS"))
+states <- data.frame(
+  region = c("California", "NewYork", "SouthCarolina", "Minnesota", "Michigan", 
+             "Nebraska"))
+
+avocados_major <- avocados_clean |>
+  semi_join(major_regions, by = "region")
+avocados_nonmajor <- avocados_clean |>
+  semi_join(nonmajor_regions, by = "region")
+avocados_states <- avocados_clean |>
+  semi_join(states, by = "region")
+avocados_metro <- avocados_clean |>
+  anti_join(major_regions, by = "region") |>
+  anti_join(nonmajor_regions, by = "region") |>
+  anti_join(states, by = "region")
+```
+
+### Summarizing avocado sales
+
+```{r}
+avocados_major |>
+  filter(type == "organic" & year == 2017) |>
+  group_by(region) |>
+  summarize(total = sum(`Small Bags`)) |>
+  slice_max(order_by = total)
+```
+
+Northeast sold the most organic, small Hass avocados in 2017 of the major regions.
+
+```{r}
+avocados_clean |>
+  separate(col = Date, into = c("Year", "Month", "Day"), sep = "-") |>
+  group_by(Month) |>
+  summarize(total = sum(`Total Volume`)) |>
+  slice_max(order_by = total)
+```
+
+February had the highest volume of avocado sales.
+
+```{r}
+top5_metro <- avocados_metro |>
+  group_by(region) |>
+  summarize(mean_vol = mean(`Total Volume`)) |>
+  slice_max(order_by = mean_vol, n = 5)
+avocados_metro |>
+  semi_join(top5_metro, by = "region") |>
+  ggplot(mapping = aes(x = region, y = `Total Volume`)) +
+  geom_boxplot() +
+  labs(x = "Metropolitan region", y = "Total volume of avocados sold")
+```
+
+Dallas Ft. Worth, Houston, Los Angeles, Pheonix Tucson, and West Texas New Mexico were the metropolitan regions that sold the most avocados. Of these, Los Angeles appears to have a much higher volume of avocados sold than the others.
+
+### Reshaping
+
+```{r}
+#| message: false
+cali_regions <- data.frame(
+  region = c("LosAngeles", "SanDiego", "Sacramento", "SanFrancisco"))
+avocados_cali <- avocados_metro |>
+  semi_join(cali_regions, by = "region")
+avocados_cali |>
+  group_by(region, type) |>
+  summarize(avg_price = mean(AveragePrice)) |>
+  pivot_wider(names_from = "type", values_from = "avg_price") |>
+  mutate(price_diff = abs(conventional - organic))
+```
+
+```{r}
+#| message: false
+avocados_cali |> 
+  group_by(region, type) |>
+  summarize(avg_price = mean(AveragePrice)) |>
+  ggplot(mapping = aes(x = region, y = avg_price)) +
+  geom_line(aes(group = region)) +
+  geom_point(aes(color = type)) +
+  labs(x = "California region", y = "Average avocado price")
+```
+
+The price between conventional and organic avocados is the most different in San Francisco.
+
+```{r}
+#| message: false
+avocados_cali |>
+  group_by(region, type) |>
+  summarize(Small = mean(`Small/Medium Hass Avocado`), 
+            Large = mean(`Large Hass Avocado`), 
+            `Extra Large` = mean(`Extra Large Hass Avocado`),
+            total = sum(Small, Large, `Extra Large`)) |>
+  mutate(across(
+    .cols = "Small":"Extra Large", .fns = ~ .x / total)
+    ) |>
+  pivot_longer(cols = "Small":"Extra Large", names_to = "Avocado Size", 
+               values_to = "proportion") |>
+  mutate(`Avocado Size` = factor(`Avocado Size`, 
+                                 levels = c("Small", "Large", "Extra Large"))
+         ) |>
+  ggplot(mapping = aes(x = region, y = proportion, fill = `Avocado Size`)) +
+  geom_bar(position = "stack", stat = "identity") +
+  facet_wrap(~ type) +
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  labs(x = "Region of CA", y = "Proportion of Mean Avocados Sold")
+```

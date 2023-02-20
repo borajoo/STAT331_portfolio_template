@@ -1,0 +1,28 @@
+---
+title: "Challenge 2"
+author: "Bora Joo"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    code-fold: true
+editor: visual
+execute:
+  echo: true
+  error: true
+---
+
+```{r setup}
+library(tidyverse)
+```
+
+```{r data}
+surveys <- read_csv(here::here("labs", "lab2", "surveys.csv"))
+```
+
+```{r}
+ggplot(data = surveys, mapping = aes(x = weight, y = species, color = genus)) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(x = "weight of animal (g)", y = "species of animal", color = "genus of animal") +
+  scale_color_manual(values = cartography::carto.pal(pal1 = "multi.pal", n1 = 8))
+```
