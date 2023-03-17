@@ -1,0 +1,122 @@
+---
+title: "Lab 9"
+author: "Bora Joo"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    code-fold: true
+editor: visual
+execute:
+  echo: true
+  error: true
+---
+
+```{r}
+#| message: false
+library(tidyverse)
+library(gt)
+```
+
+```{r}
+#| message: false
+names_a <- read_csv(here::here("labs", "lab9", "StateNames_A.csv"))
+names_a |>
+  head() |>
+  DT::datatable()
+```
+
+## **3. Summarizing & Visualizing the Number of Allisons**
+
+```{r q1}
+#| message: false
+allisons <- names_a |>
+  rename(Sex = Gender) |>
+  filter(Name == "Allison") |>
+  group_by(State, Sex) |>
+  summarize("Count of sex" = sum(Count), .groups = "drop") |>
+  pivot_wider(names_from = "Sex", values_from = "Count of sex", values_fill = 0)
+allisons |>
+  DT::datatable()
+```
+
+```{r q2}
+allison_f <- names_a |>
+  rename(Sex = Gender) |>
+  filter(Name == "Allison", Sex == "F")
+```
+
+```{r}
+allison_f |>
+  group_by(Year) |>
+  summarize(Count = sum(Count)) |>
+  ggplot(mapping = aes(x = Year, y = Count)) +
+  geom_line() +
+  labs(y = NULL, title = "Number of babies named Allison over the years")
+
+```
+
+## **4. Modeling the Number of Allisons**
+
+```{r q4}
+allison_lm <- lm(formula = Count ~ Year, data = allison_f)
+allison_lm |>
+  group_by()
+  broom::augment() |>
+  DT::datatable()
+```
+
+5.  number of babies named Allison in a year = 3894.356 - 1.882 \* year
+
+```{r q6}
+allison_lm |>
+  broom::augment() |>
+  ggplot(mapping = aes(y = .resid, x = .fitted)) +
+  geom_point()
+```
+
+7.  Most of the points on the residual plot are clustered near the bottom of the graph, rather than being evenly distributed around the plot. Based on this, a linear regression model does not predict the number of babies named "Allison" by year. It is indeterminate whether year can correctly predict the number of "Allison"s or not.
+
+## **5. Spelling by State**
+
+```{r q8}
+#| message: false
+names_a |>
+  filter(Name %in% c("Alan", "Allan", "Allen")) |>
+  rename(Sex = Gender) |>
+  group_by(Year, Name) |>
+  summarize(Count = sum(Count)) |>
+  ggplot(mapping = aes(x = Year, y = Count, color = fct_reorder(Name, Count, .desc = TRUE))) +
+  geom_line() +
+  labs(y = NULL, title = "Number of babies named Alan, Allan, or Allen over the years",
+       color = "Name")
+```
+
+```{r q9}
+names_a |>
+  filter(Name %in% c("Alan", "Allan", "Allen"),
+         Year == 2000, State %in% c("PA", "CA")) |>
+  rename(Sex = Gender) |>
+  group_by(Name, State) |>
+  summarize(Count = sum(Count), .groups = "drop") |>
+  pivot_wider(names_from = Name, values_from = Count, values_fill = 0) |>
+  knitr::kable(format = "html", 
+               caption = "Number of babies named Alan, Allan, or Allen by state") |>
+  kableExtra::kable_styling(bootstrap_options = "striped", 
+                            font_size = 14)
+```
+
+```{r q10}
+names_a |>
+  filter(Name %in% c("Alan", "Allan", "Allen"),
+         Year == 2000, State %in% c("PA", "CA")) |>
+  rename(Sex = Gender) |>
+  group_by(Name, State) |>
+  summarize(Count = sum(Count), .groups = "drop") |>
+  group_by(State) |>
+  mutate(Count = Count / sum(Count)) |>
+  pivot_wider(names_from = Name, values_from = Count, values_fill = 0) |>
+  gt() |>
+  tab_header(title = "Proportion of babies named Alan, Allan, or Allen by state") |>
+  fmt_percent(columns = 2:4, decimals = 2)
+```

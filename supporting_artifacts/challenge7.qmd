@@ -1,0 +1,84 @@
+---
+title: "Challenge 7"
+author: "Bora Joo"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    code-fold: true
+editor: visual
+execute:
+  echo: true
+  error: true
+---
+
+## 
+
+```{r}
+#| message: false
+library(tidyverse)
+library(ggtext)
+library(forcats)
+
+```
+
+```{r}
+#| message: false
+fish <- read_csv(here::here("labs", "lab7", "BlackfootFish.csv"))
+```
+
+## Part 1
+
+```{r 4.1}
+remove_unlikely <- function(x, my_min, my_max) {
+    ifelse(x < my_min | x > my_max, NA, x)
+}
+
+test <- c(1:10)
+remove_unlikely(test, 4, 8)
+```
+
+```{r}
+# 150 - 1000mm length
+# 170 - 20,0000g weight
+
+fish <- fish |>
+  mutate(length = remove_unlikely(length, 150, 1000),
+         weight = remove_unlikely(weight, 170, 20000))
+```
+
+## Part 2
+
+```{r}
+# K = W/L^3 * 100
+condition_index <- function(weight, length) {
+  return((weight / length ^ 3) * 100)
+}
+condition_index(3, 5)
+```
+
+## Part 3
+
+```{r}
+fish <- fish |>
+  mutate(condition_index = condition_index(weight, length))
+```
+
+```{r}
+#| message: false
+fish |>
+  group_by(year, species) |>
+  summarize(avg_condition = mean(condition_index, na.rm = TRUE)) |>
+  ggplot(mapping = aes(x = year, y = avg_condition, 
+                       color = fct_reorder(species, avg_condition))) +
+  geom_line() +
+  labs(x = "Year of study", y = NULL, 
+       title = "Average condition index of fish by species",
+       subtitle = "Throughout duration of study",
+       color = "Species") +
+  theme(plot.title = element_markdown(size = 16),
+        axis.text.y = element_text(size = 12), 
+        axis.text.x = element_text(size = 12),
+        axis.title = element_text(size = 14)
+        )
+```

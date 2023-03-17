@@ -202,7 +202,18 @@ home_prices_avocados <- avocados_cali |>
 -   `right_join()`
 
 ```{r wd-5-right}
-
+# Challenge 4 (alternative)
+cali_regions <- data.frame(
+  cali_region = c("Los Angeles", "San Diego", "Sacramento", "San Francisco"))
+avocados_cali <- avocados_clean |>
+  mutate(cali_region = case_when(
+    region == "LosAngeles" ~ "Los Angeles",
+    region == "SanDiego" ~ "San Diego",
+    region == "Sacramento" ~ "Sacramento",
+    region == "SanFrancisco" ~ "San Francisco")) |>
+  semi_join(cali_regions) 
+home_prices_avocados <- home_prices_clean |>
+  right_join(avocados_cali, by = c("cali_region" = "RegionName"))
 ```
 
 -   `inner_join()`
@@ -348,13 +359,13 @@ avocados_clean |>
 -   Example 2
 
 ```{r r-3-2}
-# Lab 3 Q14
+# Lab 3 Q14 (revised)
 hiphop_clean |>
-  filter(ethnic == "white" & 
-           sex == "Male" & 
-           age > 16 & 
-           age < 24 & 
-           city > 10000 &
+  filter(ethnic == "white",
+           sex == "Male",
+           age > 16,
+           age < 24,
+           city > 10000,
            city < 60000) |>
   slice_max(bieber) |>
   distinct(subj)
@@ -416,14 +427,19 @@ surveys |>
 -   Example 1
 
 ```{r dvs-2-1}
-# Lab 4 Q6
-avocados_cali |> 
-  group_by(region, type) |>
-  summarize(avg_price = mean(AveragePrice)) |>
-  ggplot(mapping = aes(x = region, y = avg_price)) +
-  geom_line(aes(group = region)) +
-  geom_point(aes(color = type)) +
-  labs(x = "California region", y = "Average avocado price")
+# Lab 7 Q2.2
+fish |>
+  group_by(year, trip, section) |>
+  mutate(year = as.factor(year), trip = as.factor(trip)) |>
+  summarize(`Number of NAs` = sum(is.na(weight))) |>
+  ggplot(mapping = aes(x = `Number of NAs`, y = year, 
+                       fill = fct_recode(trip, `Trip 1` = "1", `Trip 2` = "2"))) +
+  geom_bar(stat = "identity") + 
+  facet_wrap(~ section) +
+  labs(x = NULL, y = NULL, 
+       title = "Missing Fish Weights Over the Years for Trip 1 and Trip 2", 
+       subtitle = "By Section of Blackfoot River",
+       fill = "Trip")
 ```
 
 -   Example 2
@@ -452,7 +468,22 @@ ggplot(data = surveys, mapping = aes(x = weight, y = species, color = genus)) +
 -   Example 2
 
 ```{r dvs-3-2}
-
+# Challenge 7 part 3 (revised)
+fish |>
+  group_by(year, species) |>
+  summarize(avg_condition = mean(condition_index, na.rm = TRUE)) |>
+  ggplot(mapping = aes(x = year, y = avg_condition, 
+                       color = fct_reorder(species, avg_condition))) +
+  geom_line() +
+  labs(x = "Year of study", y = NULL, 
+       title = "Average condition index of fish by species",
+       subtitle = "Throughout duration of study",
+       color = "Species") +
+  theme(plot.title = element_markdown(size = 16),
+        axis.text.y = element_text(size = 12), 
+        axis.text.x = element_text(size = 12),
+        axis.title = element_text(size = 14)
+        )
 ```
 
 **DVS-4: I can calculate numerical summaries of variables.**
@@ -460,9 +491,9 @@ ggplot(data = surveys, mapping = aes(x = weight, y = species, color = genus)) +
 -   Example 1
 
 ```{r dvs-4-1}
-# Lab 4 Q3
+# Lab 4 Q3 (revised)
 avocados_major |>
-  filter(type == "organic" & year == 2017) |>
+  filter(type == "organic", year == 2017) |>
   group_by(region) |>
   summarize(total = sum(`Small Bags`)) |>
   slice_max(order_by = total)
@@ -471,9 +502,9 @@ avocados_major |>
 -   Example 2
 
 ```{r dvs-4-2}
-# Lab 3 Q12
+# Lab 3 Q12 (revised)
 word_familiarity <- hiphop_clean |>
-  filter(eth == "non-white" & sex == "Female") |>
+  filter(eth == "non-white", sex == "Female") |>
   group_by(word) |>
   summarize(avg_familiarity = mean(
     as.numeric(
@@ -523,13 +554,30 @@ avocados_cali |>
 -   Example 1
 
 ```{r dvs-6-1}
-
+# Lab 9 Q1
+allisons <- names_a |>
+  rename(Sex = Gender) |>
+  filter(Name == "Allison") |>
+  group_by(State, Sex) |>
+  summarize("Count of sex" = sum(Count), .groups = "drop") |>
+  pivot_wider(names_from = "Sex", values_from = "Count of sex", values_fill = 0)
+allisons |>
+  DT::datatable()
 ```
 
 -   Example 2
 
 ```{r dvs-6-2}
-
+# Lab 9 Q8
+names_a |>
+  filter(Name %in% c("Alan", "Allan", "Allen")) |>
+  rename(Sex = Gender) |>
+  group_by(Year, Name) |>
+  summarize(Count = sum(Count)) |>
+  ggplot(mapping = aes(x = Year, y = Count, color = fct_reorder(Name, Count, .desc = TRUE))) +
+  geom_line() +
+  labs(y = NULL, title = "Number of babies named Alan, Allan, or Allen over the years",
+       color = "Name")
 ```
 
 **DVS-7: I show creativity in my tables.**
@@ -537,13 +585,36 @@ avocados_cali |>
 -   Example 1
 
 ```{r dvs-7-1}
-
+# Lab 9 Q9
+names_a |>
+  filter(Name %in% c("Alan", "Allan", "Allen"),
+         Year == 2000, State %in% c("PA", "CA")) |>
+  rename(Sex = Gender) |>
+  group_by(Name, State) |>
+  summarize(Count = sum(Count), .groups = "drop") |>
+  pivot_wider(names_from = Name, values_from = Count, values_fill = 0) |>
+  knitr::kable(format = "html", 
+               caption = "Number of babies named Alan, Allan, or Allen by state") |>
+  kableExtra::kable_styling(bootstrap_options = "striped", 
+                            font_size = 14)
 ```
 
 -   Example 2
 
 ```{r dvs-7-2}
-
+# Lab 9 Q10
+names_a |>
+  filter(Name %in% c("Alan", "Allan", "Allen"),
+         Year == 2000, State %in% c("PA", "CA")) |>
+  rename(Sex = Gender) |>
+  group_by(Name, State) |>
+  summarize(Count = sum(Count), .groups = "drop") |>
+  group_by(State) |>
+  mutate(Count = Count / sum(Count)) |>
+  pivot_wider(names_from = Name, values_from = Count, values_fill = 0) |>
+  gt() |>
+  tab_header(title = "Proportion of babies named Alan, Allan, or Allen by state") |>
+  fmt_percent(columns = 2:4, decimals = 2)
 ```
 
 ## Program Efficiency
@@ -580,7 +651,12 @@ hiphop_clean <- hiphop |>
 -   `map()` functions
 
 ```{r pe-1-map-1}
-
+# Lab 8 Q2
+map_chr(
+  .x = xmas2$Day,
+  .f = ~ sing_day(xmas2, .x, Full.Phrase)
+) |>
+  cat()
 ```
 
 **PE-2: I can write functions to reduce repetition in my code.**
@@ -629,11 +705,37 @@ hiphop_clean <- hiphop |>
 -   `map()` functions (Provide 2 Examples)
 
 ```{r pe-3-map-1}
+# Lab 8 Q1
+sing_day <- function(dataset, line, phrase_col){
+  
+  # Step 1: Setup the intro line
+  # Hint: You need to convert a number (e.g., 1) to a word (e.g., first)
+  num_word <- ordinal(line)
+  
+  intro <- glue::glue("On the {num_word} day of Christmas, my true love gave to me:")
+  
+  # Step 2: Sing the gift phrases
+  phrases <- dataset |>
+    pull( {{phrase_col}} )
 
+  lyrics <- map_chr(.x = line:1,
+                    .f = ~ case_when(.x == 1 ~ glue("{phrases[.x]}."),
+                                     .x == 2 ~ glue("{phrases[.x]}, and"), 
+                                     .default = glue("{phrases[.x]},")))
+  
+  ## put it together
+  lyrics <- str_c(lyrics, collapse = "\n")
+  return(glue("{intro}\n{lyrics}\n\n", .trim = FALSE))
+}
 ```
 
 ```{r pe-3-map-2}
-
+# Lab 8 Q2
+map_chr(
+  .x = xmas2$Day,
+  .f = ~ sing_day(xmas2, .x, Full.Phrase)
+) |>
+  cat()
 ```
 
 **PE-4: I can use modern tools when carrying out my analysis.**
@@ -681,13 +783,15 @@ avocados_cali |>
 -   Example 1
 
 ```{r dsm-1-1}
-
+# Practice Activity 9.2 Q2
+qunif(0.95, min = 1.5, max = 3.5)
 ```
 
 -   Example 2
 
 ```{r dsm-1-2}
-
+# Practice Activity 9.2 Q2
+pnorm(5, mean = 4.6, sd = 0.8, lower.tail = FALSE)
 ```
 
 **DSM-2: I can fit a linear regression and extract necessary summary measures.**
@@ -695,13 +799,27 @@ avocados_cali |>
 -   Example 1
 
 ```{r dsm-2-1}
-
+# Lab 9 Q4 + Q6
+allison_lm <- lm(formula = Count ~ Year, data = allison_f)
+allison_lm |>
+  group_by()
+  broom::augment() |>
+  DT::datatable()
+allison_lm |>
+  broom::augment() |>
+  ggplot(mapping = aes(y = .resid, x = .fitted)) +
+  geom_point()
 ```
 
 -   Example 2
 
 ```{r dsm-2-2}
-
+# Practice Activity 9.2 Q1
+animal_lm <- lm(weight_after ~ weight_before, data = animal)
+animal_lm |>
+  broom::augment() |>
+  ggplot(mapping = aes(y = .resid, x = .fitted)) +
+  geom_point()
 ```
 
 ## Revising My Thinking

@@ -1,0 +1,131 @@
+---
+title: "Practice Activity 8: The 12 Days of Christmas"
+format: html
+editor: visual
+---
+
+```{r packages}
+#| include: false
+library(dplyr)
+library(glue)
+library(stringr)
+library(purrr)
+library(english)
+```
+
+```{r}
+xmas <- read.csv("https://www.dropbox.com/s/e584pryn8evm1gz/xmas.csv?dl=1")
+```
+
+## Pluralize Gifts
+
+```{r pluralize-function}
+# Function that takes a noun and makes it plural
+# Arguments -- gift -- A string or vector of strings
+# Return -- A string or vector of strings with the pluralized words
+
+pluralize_gift <- function(gift){
+
+gift <- case_when(
+    str_detect(gift, "y$") ~ str_replace(gift, "y$", "ies"),
+    str_detect(gift, "oo") ~ str_replace(gift, "oo", "ee"),
+    .default = str_c(gift, "s")
+)
+
+return(gift)
+
+}
+```
+
+### Test Pluralize Gifts
+
+```{r pluralize-test}
+## This will work if your function is vectorized!
+pluralize_gift(xmas$Gift.Item)
+```
+
+## Make Gift Phrases
+
+```{r phrase-function}
+make_phrase <- function(day, num_word, item, verb, adjective, location){
+  
+  ## Step 1: Replace NAs with blank strings
+  verb <- str_replace_na(verb, "")
+  adjective <- str_replace_na(adjective, "")
+  location <- str_replace_na(location, "")
+
+  
+  ## Step 2: If the day is larger than 1, the items need pluralized! 
+  ## Step 3: If the day is 1, you need to add an "a" or "an" before the gift 
+  item <- case_when(
+    day > 1 ~ pluralize_gift(item),
+    day == 1 & str_detect(item, "^[aeiou]") ~ glue("an {item}"),
+    .default = glue("a {item}")
+  )
+  
+  if(num_word == "one"){
+    num_word <- ""
+  }
+  
+  ## Step 4: Glue all of the pieces together to make a phrase! 
+  phrase <- glue("{num_word} {adjective} {item} {verb} {location}")
+  phrase <- str_squish(phrase)
+  return(phrase)
+}
+```
+
+```{r}
+xmas2 <- xmas %>%
+  mutate(Full.Phrase = pmap_chr(.l = list(Day, 
+                                          as.character(english(Day)), 
+                                          Gift.Item, 
+                                          Verb,
+                                          Adjective,
+                                          Location), 
+                                .f = make_phrase)
+         )
+xmas2$Full.Phrase
+```
+
+## **Sing Phrases**
+
+```{r section 1}
+sing_day <- function(dataset, line, phrase_col){
+  
+  # Step 1: Setup the intro line
+  # Hint: You need to convert a number (e.g., 1) to a word (e.g., first)
+  num_word <- ordinal(line)
+  
+  intro <- glue::glue("On the {num_word} day of Christmas, my true love gave to me:")
+  
+  # Step 2: Sing the gift phrases
+  phrases <- dataset |>
+    pull( {{phrase_col}} )
+
+  lyrics <- map_chr(.x = line:1,
+                    .f = ~ case_when(.x == 1 ~ glue("{phrases[.x]}."),
+                                     .x == 2 ~ glue("{phrases[.x]}, and"), 
+                                     .default = glue("{phrases[.x]},")))
+  
+  ## put it together
+  lyrics <- str_c(lyrics, collapse = "\n")
+  return(glue("{intro}\n{lyrics}\n\n", .trim = FALSE))
+}
+```
+
+### Test Sing Phrases
+
+```{r}
+xmas2 |>
+  sing_day(line = 3, phrase_col = Full.Phrase)
+```
+
+## **Sing Song**
+
+```{r section 2}
+map_chr(
+  .x = xmas2$Day,
+  .f = ~ sing_day(xmas2, .x, Full.Phrase)
+) |>
+  cat()
+```

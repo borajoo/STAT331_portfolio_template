@@ -1,0 +1,97 @@
+---
+title: "Lab 7"
+author: "Bora Joo"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    code-fold: true
+editor: visual
+execute:
+  echo: true
+  error: true
+---
+
+## **Part One: Summaries and Plots**
+
+```{r}
+#| message: false
+library(tidyverse)
+```
+
+```{r}
+#| message: false
+fish <- read_csv(here::here("labs", "lab7", "BlackfootFish.csv"))
+```
+
+```{r 2.1}
+fish |>
+  summarize(
+    across(
+      .cols = everything(), .fns = ~ sum(is.na(.x)), .names = "{.col}")) |>
+  pivot_longer(cols = everything(), names_to = "Variable", 
+                values_to = "Number of NAs")
+```
+
+```{r 2.2}
+#| message: false
+fish |>
+  group_by(year, trip, section) |>
+  mutate(year = as.factor(year), trip = as.factor(trip)) |>
+  summarize(`Number of NAs` = sum(is.na(weight))) |>
+  ggplot(mapping = aes(x = `Number of NAs`, y = year, 
+                       fill = fct_recode(trip, `Trip 1` = "1", `Trip 2` = "2"))) +
+  geom_bar(stat = "identity") + 
+  facet_wrap(~ section) +
+  labs(x = NULL, y = NULL, 
+       title = "Missing Fish Weights Over the Years for Trip 1 and Trip 2", 
+       subtitle = "By Section of Blackfoot River",
+       fill = "Trip")
+```
+
+## **Part Two: Adjusting the Data (Function Writing)**
+
+```{r 3.1-3.2}
+rescale_01 <- function(x) {
+  stopifnot(is.numeric(x), length(x) > 1)
+
+  smallest <- min(x, na.rm = TRUE)
+  largest <- max(x, na.rm = TRUE)
+  return((x - smallest) / (largest - smallest))
+}
+```
+
+```{r 3.3}
+x <- c(1:85, NA)
+test <- rescale_01(x)
+min(test, na.rm = TRUE) == 0
+max(test, na.rm = TRUE) == 1
+```
+
+```{r 3.4}
+#| layout-nrow: 2
+
+rescaled <- fish |>
+  mutate(rescaled_length = rescale_01(length))
+rescaled |>
+  ggplot(mapping = aes(x = length)) +
+  geom_density() +
+  labs(x = "Length of fish", y = NULL, title = "Density of length of fish")
+rescaled |>
+  ggplot(mapping = aes(x = rescaled_length)) +
+  geom_density() +
+  labs(x = "Rescaled length of fish", y = NULL, title = "Density of rescaled length of fish")
+```
+
+```{r 3.5}
+rescale_column <- function(df, names) {
+  df |>
+    mutate(
+      across(.cols = {{ names }}, .fns = ~ rescale_01(.x), .names = "{.col}"))
+}
+```
+
+```{r 3.6}
+rescaled <- fish |>
+  rescale_column(c(length, weight))
+```
