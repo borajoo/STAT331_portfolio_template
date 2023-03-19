@@ -3,3 +3,9 @@ title: "The Power of Efficiency"
 format: html
 editor: visual
 ---
+
+Efficiency is performing actions in a manner that will result in less work. In terms of statistical computing/data science, efficiency relates to writing functions that create less work for the computer. Efficiency allows you to run code faster, allowing you to analyze data faster in turn. It is important because statistical computing often involves large datasets, so without efficiency, the code would be much slower and hard to scale. Writing efficient code is also often easier to understand than inefficient code, making it easier for other researchers to read and reproduce your work.
+
+When writing code for this class, I had to consider how to write efficient code in all of my assignments. For example, when writing conditions for filter() functions, I learned to add the conditions as arguments instead of writing multiple filter() functions or connecting the conditions with &s. Other ways I learned to be efficient was using across() and iteration with map() in order to avoid repetition of code. In doing so, I wrote much cleaner code that could be easily reproducible and efficiently run.
+
+Some a-ha moments I had was when I found myself copying and pasting the same line of code (such as rename(), or filter() as shown in PE-3), and realized that I could shorten the operation by combining the arguments. I also had an a-ha moment when I learned how to use across(), which was difficult to comprehend at first. Once I figured out how across() worked, it became one of my favorite tools to mutate multiple columns at the same time.

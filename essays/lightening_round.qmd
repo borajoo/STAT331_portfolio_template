@@ -3,3 +3,13 @@ title: "Lightening Round Essays"
 format: html
 editor: visual
 ---
+
+If Noah doesn't earn an A, then nobody should, because he was very helpful during our practice activities and always seemed to understand the material.
+
+The most difficult part of the class for me was the week on reshaping datasets, because it was difficult to wrap my head around what to group by and pivot by, as well as how to specifically recreate bar plots.
+
+The easiest part of the class for me was creating graphs using ggplot, because once I understood how they worked, it felt very intuitive to create any kind of plot I wanted to make.
+
+I was most interested in iteration because I had assumed that R did not really operate that way before we learned about it, and I had fun making the lyrics for the 12 days of Christmas song.
+
+One piece of advice I would give is to read/watch all the resources provided and make sure to ask questions when stuck.
